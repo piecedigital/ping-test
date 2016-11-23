@@ -72,8 +72,6 @@ var Form = React.createClass({
     var data = sendData ? this.makeData(dataAmount) : null;
     this.setState({
       pingData: data
-    }, function () {
-      this.ping();
     });
   },
   makeData: function (bytes) {
@@ -107,16 +105,13 @@ var Form = React.createClass({
           setTimeout(this.ping, this.refs["ping-interval"].value);
         }.bind(this),
         error: function(data) {
+          var newPings = JSON.parse(JSON.stringify(this.state.pingMSValues));
           newPings.push(null);
           this.setState({
             pingMSValues: newPings
           });
           setTimeout(this.ping, this.refs["ping-interval"].value);
-        }
-      });
-    } else {
-      this.setState({
-        allowPing: true
+        }.bind(this)
       });
     }
   },
@@ -129,6 +124,7 @@ var Form = React.createClass({
     var data = sendData ? this.makeData(dataAmount) : null;
     this.setState({
       pinging: true,
+      allowPing: true,
       pingData: data
     }, function () {
       this.ping();
@@ -138,6 +134,12 @@ var Form = React.createClass({
     this.setState({
       pinging: false,
       allowPing: false
+    });
+  },
+  resetData() {
+    this.setState({
+      pingMSValues: [],
+      maxPing: 0
     });
   },
   render() {
@@ -197,9 +199,22 @@ var Form = React.createClass({
             {type: "submit", defaultValue: this.state.pinging ? "Stop Pinging" : "Start Pinging", onClick: this.state.pinging ? this.stopPing : this.startPing }
           ),
           React.createElement(
+            "input",
+            {type: "submit", defaultValue: "Reset Data", onClick: this.resetData }
+          )
+        ),
+        React.createElement(
+          "div",
+          null,
+          React.createElement(
+            "label",
+            null,
+            "Max Ping: "
+          ),
+          React.createElement(
             "span",
             null,
-            this.state.maxPing
+            this.state.maxPing + "ms"
           )
         ),
         React.createElement(

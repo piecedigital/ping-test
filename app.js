@@ -10,6 +10,7 @@ app.get("/", function (req, res) {
 
 app.get("/ping", function (req, res) {
   console.log("Ping Back");
+  // res.status( !Math.floor(Math.random() * 10) ? 400 : 200 ).send("Success");
   res.status(200).send("Success");
 });
 
