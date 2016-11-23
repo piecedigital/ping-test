@@ -55,7 +55,8 @@ var Form = React.createClass({
         boxHeight: 100,
         boxWidth: 200,
         bandWidth: 1
-      }
+      },
+      hoverBandVal: null
     }
   },
   setSendData: function() {
@@ -141,6 +142,13 @@ var Form = React.createClass({
       pingMSValues: [],
       maxPing: 0
     });
+  },
+  mouseEvent(tEvent, val, e) {
+    var clientX = e.nativeEvent.clientX, clientY = e.nativeEvent.clientY;
+    switch (tEvent) {
+      case "enter": this.setState({ hoverBandVal: val, clientX: clientX, clientY: clientY }); break;
+      case "leave": this.setState({ hoverBandVal: null, clientX: 0, clientY: 0 }); break;
+    }
   },
   render() {
     return (
@@ -229,10 +237,18 @@ var Form = React.createClass({
               {key: ind, style: {
                 height: val ? this.state.display.boxHeight * (val / this.state.maxPing) + "px" : null,
                 width: this.state.display.bandWidth
-              }, className: "data-band" + (!val ? " bad" : ""), "data-val": val}
+              }, className: "data-band" + (!val ? " bad" : ""), "data-val": val, onMouseEnter: this.mouseEvent.bind(this, "enter", val), onMouseLeave: this.mouseEvent.bind(this, "leave", val)}
             )
           }.bind(this))
-        )
+        ),
+        this.state.hoverBandVal !== null ? React.createElement(
+          "div",
+          {className: "hover", style: {
+            top: this.state.clientY - 24,
+            left: this.state.clientX + 5
+          }},
+          this.state.hoverBandVal
+        ) : null
       )
     );
   }
