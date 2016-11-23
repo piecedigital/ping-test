@@ -214,7 +214,7 @@ var Form = React.createClass({
           React.createElement(
             "span",
             null,
-            this.state.maxPing + "ms"
+            this.state.maxPing + "s"
           )
         ),
         React.createElement(
