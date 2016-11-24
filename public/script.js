@@ -51,6 +51,7 @@ var Form = React.createClass({
       pingData: "",
       pingMSValues: [],
       maxPing: 0,
+			avgPing: 0,
       display: {
         boxHeight: 100,
         boxWidth: 200,
@@ -101,7 +102,10 @@ var Form = React.createClass({
           var newMaxPing = Math.max.apply(null, newPings);
           this.setState({
             pingMSValues: newPings,
-            maxPing: newMaxPing > this.state.maxPing ? newMaxPing : this.state.maxPing
+            maxPing: newMaxPing > this.state.maxPing ? newMaxPing : this.state.maxPing,
+						avgPing: newPings.reduce(function (fr, sn) {
+							return fr + sn
+						}) / newPings.length
           });
           setTimeout(this.ping, this.refs["ping-interval"].value);
         }.bind(this),
@@ -223,6 +227,17 @@ var Form = React.createClass({
             "span",
             null,
             this.state.maxPing + "s"
+          ),
+					"; ",
+          React.createElement(
+            "label",
+            null,
+            "Avg. Ping: "
+          ),
+          React.createElement(
+            "span",
+            null,
+            this.state.avgPing.toFixed(4) + "s"
           )
         ),
         React.createElement(
