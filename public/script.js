@@ -248,7 +248,7 @@ var Form = React.createClass({
           React.createElement(
             "span",
             null,
-            this.state.pingMSValues[this.state.pingMSValues.length - 1] + "s"
+            this.state.pingMSValues[this.state.pingMSValues.length - 1] || 0 + "s"
           )
         ),
         React.createElement(
