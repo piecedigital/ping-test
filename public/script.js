@@ -238,6 +238,17 @@ var Form = React.createClass({
             "span",
             null,
             this.state.avgPing.toFixed(4) + "s"
+          ),
+					"; ",
+          React.createElement(
+            "label",
+            null,
+            "Curr. Ping: "
+          ),
+          React.createElement(
+            "span",
+            null,
+            this.state.pingMSValues[] + "s"
           )
         ),
         React.createElement(
