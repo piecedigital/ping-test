@@ -237,7 +237,7 @@ var Form = React.createClass({
           React.createElement(
             "span",
             null,
-            this.state.avgPing.toFixed(4) + "s"
+            this.state.avgPing.toFixed(3) + "s"
           ),
 					"; ",
           React.createElement(
