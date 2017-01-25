@@ -52,6 +52,15 @@ var Form = React.createClass({
       pingMSValues: [],
       maxPing: 0,
 			avgPing: 0,
+			mouse: {
+				update: false,
+				left: 0,
+				right: 0
+			},
+			rightDragFollow: false,
+			bottomDragFollow: false,
+			rightDrag: false,
+			bottomDrag: false,
       display: {
         boxHeight: 100,
         boxWidth: 200,
@@ -98,7 +107,10 @@ var Form = React.createClass({
           var endTime = new Date().getTime();
           var newPings = JSON.parse(JSON.stringify(this.state.pingMSValues));
           newPings.push((endTime - startTime) / 1000);
-          if(newPings.length > this.state.display.boxWidth / this.state.display.bandWidth) newPings.shift();
+					// console.log(newPings.length, this.state.display.boxWidth / this.state.display.bandWidth);
+          while(newPings.length > this.state.display.boxWidth / this.state.display.bandWidth) {
+						newPings.shift();
+					};
           var newMaxPing = Math.max.apply(null, newPings);
           this.setState({
             pingMSValues: newPings,
@@ -120,12 +132,19 @@ var Form = React.createClass({
       });
     }
   },
+	changeSpike() {
+		this.setState({
+			display: Object.assign(this.state.display, {
+				bandWidth: this.refs["spike-width"].value
+			})
+		})
+	},
   startPing: function() {
     // console.log(this.refs);
     var sendData = this.refs["data-option"].checked;
-    console.log(sendData);
+    // console.log(sendData);
     var dataAmount = sendData ? parseInt(this.refs["data-amount"].value) : 0;
-    console.log(dataAmount);
+    // console.log(dataAmount);
     var data = sendData ? this.makeData(dataAmount) : null;
     this.setState({
       pinging: true,
@@ -154,7 +173,53 @@ var Form = React.createClass({
       case "leave": this.setState({ hoverBandVal: null, clientX: 0, clientY: 0 }); break;
     }
   },
+	activateDrag(direction, e) {
+		var box = e.target.getBoundingClientRect();
+		// console.log(box);
+		var parentBox = e.target.parentNode.getBoundingClientRect();
+		// console.log(parentBox);
+		this.setState({
+			mouse: Object.assign(this.state.mouse, {
+				update: true
+			}),
+			[direction + "DragFollow"]: true,
+			[direction + "Drag"]: {
+				left: box.left,
+				top: box.top,
+				offsetX: direction === "right" ? (e.clientX - box.right) - parentBox.left: this.state[direction + "Drag"].offsetX,
+				offsetY: direction === "bottom" ? (e.clientY - box.bottom) - parentBox.top: this.state[direction + "Drag"].offsetY
+			}
+		});
+	},
+	componentDidMount() {
+		document.addEventListener("mousemove", e => {
+			if(this.state.mouse.update) {
+				this.setState({
+					mouse: Object.assign(this.state.mouse, {
+						clientX: this.state.rightDragFollow ? e.clientX : this.state.mouse.clientX,
+						clientY: this.state.bottomDragFollow ? e.clientY : this.state.mouse.clientY
+					})
+				});
+			}
+		});
+		document.addEventListener("mouseup", () => {
+			var xHere = this.state.mouse.clientX && this.state.rightDrag.offsetX;
+			var yHere = this.state.mouse.clientY && this.state.bottomDrag.offsetY;
+			this.setState({
+				mouse: Object.assign(this.state.mouse, {
+					update: false
+				}),
+				rightDragFollow: false,
+				bottomDragFollow: false,
+				display: Object.assign(this.state.display, {
+					boxWidth: xHere? this.state.mouse.clientX + this.state.rightDrag.offsetX : this.state.display.boxWidth,
+					boxHeight: yHere? this.state.mouse.clientY + this.state.bottomDrag.offsetY : this.state.display.boxHeight
+				})
+			});
+		});
+	},
   render() {
+		// console.log("drag bottom", this.state.mouse.clientY, this.state.bottomDrag.offsetY, this.state.mouse.clientY + this.state.bottomDrag.offsetY);
     return (
       React.createElement(
         "div",
@@ -196,6 +261,19 @@ var Form = React.createClass({
           React.createElement(
             "input",
             {ref: "ping-interval", type: "number", min: 1, defaultValue: 1}
+          )
+        ),
+				React.createElement(
+          "div",
+          null,
+          React.createElement(
+            "label",
+            null,
+            "Spike Width: "
+          ),
+          React.createElement(
+            "input",
+            {ref: "spike-width", type: "number", min: 1, defaultValue: 1, onChange: this.changeSpike}
           )
         ),
         React.createElement(
@@ -257,15 +335,71 @@ var Form = React.createClass({
             height: this.state.display.boxHeight + "px",
             width: this.state.display.boxWidth + "px"
           }},
-          this.state.pingMSValues.map(function (val, ind) {
-            return React.createElement(
-              "div",
-              {key: ind, style: {
-                height: val ? this.state.display.boxHeight * (val / this.state.maxPing) + "px" : null,
-                width: this.state.display.bandWidth
-              }, className: "data-band" + (!val ? " bad" : ""), "data-val": val, onMouseEnter: this.mouseEvent.bind(this, "enter", val), onMouseLeave: this.mouseEvent.bind(this, "leave", val)}
-            )
-          }.bind(this))
+					React.createElement(
+            "span",
+            { className: "spikes"},
+						this.state.pingMSValues.map(function (val, ind) {
+							return React.createElement(
+								"div",
+								{key: ind, style: {
+									height: val ? this.state.display.boxHeight * (val / this.state.maxPing) + "px" : null,
+									width: this.state.display.bandWidth
+								}, className: "data-band" + (!val ? " bad" : ""), "data-val": val, onMouseEnter: this.mouseEvent.bind(this, "enter", val), onMouseLeave: this.mouseEvent.bind(this, "leave", val)}
+							)
+						}.bind(this))
+          ),
+					React.createElement(
+            "span",
+            { className: "drags" },
+						React.createElement(
+	            "span",
+	            { ref: "right", className: "right", onMouseDown: this.activateDrag.bind(this, "right"),
+								style: this.state.rightDragFollow && this.state.rightDrag ? {
+									// position: "fixed",
+									left: this.state.mouse.clientX + this.state.rightDrag.offsetX
+								} : this.state.rightDrag ? {
+									// position: "fixed",
+									left: this.state.mouse.clientX + this.state.rightDrag.offsetX
+								} : null
+							},
+							React.createElement(
+		            "span",
+		            null
+		          ),
+							React.createElement(
+		            "span",
+		            null
+		          ),
+							React.createElement(
+		            "span",
+		            null
+		          )
+	          ),
+						React.createElement(
+	            "span",
+	            { ref: "bottom", className: "bottom", onMouseDown: this.activateDrag.bind(this, "bottom"),
+								style: this.state.bottomDragFollow && this.state.bottomDrag ? {
+									// position: "fixed",
+									top: this.state.mouse.clientY + this.state.bottomDrag.offsetY
+								} : this.state.bottomDrag ? {
+									// position: "fixed",
+									top: this.state.mouse.clientY + this.state.bottomDrag.offsetY
+								} : null
+							},
+							React.createElement(
+		            "span",
+		            null
+		          ),
+							React.createElement(
+		            "span",
+		            null
+		          ),
+							React.createElement(
+		            "span",
+		            null
+		          )
+	          )
+          )
         ),
         this.state.hoverBandVal !== null ? React.createElement(
           "div",
